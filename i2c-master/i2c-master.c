@@ -137,8 +137,8 @@ static void i2c_setup(void)
   i2c_set_dutycycle(I2C1, I2C_CCR_DUTY_DIV2);
   
   /* Enable events and errors interrupts */
-  //i2c_enable_interrupt(I2C1, I2C_CR2_ITERREN);
-  i2c_enable_interrupt(I2C1, I2C_CR2_ITEVTEN);
+//  i2c_enable_interrupt(I2C1, I2C_CR2_ITERREN);
+//  i2c_enable_interrupt(I2C1, I2C_CR2_ITEVTEN);
   
   /* 
      NXP PCA9685 datasheet specifies maximum rise time to be 1000 ns, giving
@@ -177,14 +177,17 @@ void i2c1_ev_isr(void)
     
   flag1 = I2C1_SR1;
   
-  if(I2C1_SR1 & I2C_SR1_SB) {
+  if(flag1 & I2C_SR1_SB) {
     i2c_enable_interrupt(I2C1, I2C_CR2_ITBUFEN);
+    
+    flag1 = I2C1_SR1;
     GPIOA_ODR ^= GPIO5|GPIO1;
   }
   
 
   /* Only read SR2 if ADDR bit is set as per documentation */
   if(flag1 & I2C_SR1_ADDR) {
+    flag1 = I2C1_SR1;
     flag2 = I2C1_SR2;
     flag2 = flag2 << 16; 
   }
@@ -206,8 +209,11 @@ int main(void)
     usart_send_blocking(USART2, '.');
     
     i2c_send_start(I2C1);
-    
+
     usart_send_blocking(USART2, '.');
+    
+    i2c_enable_interrupt(I2C1, I2C_CR2_ITEVTEN);
+    
     WaitForEvent(I2C_EV5_MASTER_MODE_STARTED); /* EV5 */
 
     usart_send_blocking(USART2, '.');
